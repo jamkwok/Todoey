@@ -11,9 +11,15 @@ import UIKit
 class TodoListViewController: UITableViewController {
 
     var itemArray: [String] = []
+    
+    let defaults = UserDefaults.standard
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        // Retrieve Persisted Data
+        if let items = defaults.array(forKey: "TodoListArray") as? [String] {
+            itemArray = items
+        }
         
     }
 
@@ -54,6 +60,8 @@ class TodoListViewController: UITableViewController {
             (action) in
             // What will happen once the user clicks add new item on our UIAlert.
             self.itemArray.append(textField.text!)
+            //Persist Data inside a PList file
+            self.defaults.set(self.itemArray, forKey: "TodoListArray")
             self.tableView.reloadData()
         }
         
