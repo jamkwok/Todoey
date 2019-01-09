@@ -13,11 +13,14 @@ class TodoListViewController: UITableViewController {
     var itemArray = [Item]()
     
     let defaults = UserDefaults.standard // Is a Singleton
+    
+    // Create new plist path
+    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        loadItemsAndRefreshTable()
         
-        // Retrieve Persisted Data
     }
 
     //MARK: - TableView DataSource Methods
@@ -40,7 +43,7 @@ class TodoListViewController: UITableViewController {
     //MARK:- TableView Delegate Methods
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         itemArray[indexPath.row].done = !itemArray[indexPath.row].done
-        tableView.reloadData()
+        saveItemsAndRefreshTable()
         tableView.deselectRow(at: indexPath, animated: true)
     }
     
@@ -55,9 +58,7 @@ class TodoListViewController: UITableViewController {
             (action) in
             // What will happen once the user clicks add new item on our UIAlert.
             self.itemArray.append(Item(titleText: textField.text!))
-            //Persist Data inside a PList file
-
-            self.tableView.reloadData()
+            self.saveItemsAndRefreshTable()
         }
         
         let cancel = UIAlertAction(title: "Cancel", style: .default) { (action) in
@@ -74,6 +75,36 @@ class TodoListViewController: UITableViewController {
         }
         // show alert
         present(alert, animated: true, completion: nil)
+    }
+    
+    //MARK - Model Manipulation Methods
+    func saveItemsAndRefreshTable() {
+        //Persist Data inside a Plist file
+        let encoder = PropertyListEncoder()
+        do {
+            let data = try encoder.encode(itemArray)
+            try data.write(to: dataFilePath!)
+        } catch {
+            print("Failed to encode items or save to file \(error)")
+        }
+        
+        self.tableView.reloadData()
+    }
+    
+    func loadItemsAndRefreshTable() {
+        // Retrieve Persisted Data
+        do {
+            // get Encoded data from plist file
+            if let data = try? Data(contentsOf: dataFilePath!) {
+                let decoder = PropertyListDecoder()
+                // Needs the data type to decode to using the .self after type signifies we are refering to the type
+                itemArray = try decoder.decode([Item].self, from: data)
+            }
+        } catch {
+            print("Failed to decode items or retrieve from file \(error)")
+        }
+        
+        self.tableView.reloadData()
     }
 }
 
